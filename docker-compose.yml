@@ -1,0 +1,13 @@
+version: '3'
+services:
+  dev-db:
+    image: mysql:8.0
+    volumes:
+      - ./dbdata:/var/lib/mysql
+    environment:
+      - MYSQL_DATABASE=shop-lord
+      - MYSQL_USER=ductai
+      - MYSQL_PASSWORD=superadmin
+      - MYSQL_ROOT_PASSWORD=superadmin
+    ports:
+      - 3457:3306

@@ -1,0 +1,106 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Role {
+  id                      Int                       @id @default(autoincrement())
+  name                    String
+  userRoles               UserRole[]
+  createdAt               DateTime?                 @default(dbgenerated("now()")) @map("created_at") @db.Timestamp()
+  updatedAt               DateTime?                 @map("updated_at") @db.Timestamp()
+  deletedAt               DateTime?                 @map("deleted_at") @db.Timestamp()
+
+  @@map("role")
+}
+
+model User {
+  id                      String                    @id @default(uuid())
+  email                   String?                   
+  username                String?                   @unique
+  password                String?
+  firstName               String?                   @map("first_name")
+  lastName                String?                   @map("last_name")
+  gender                  Int?                      @db.SmallInt
+  userRoles               UserRole[]
+  userCart                Cart?
+  createdAt               DateTime                  @default(dbgenerated("now()")) @map("created_at") @db.Timestamp()
+  updatedAt               DateTime?                 @map("updated_at") @db.Timestamp()
+  deletedAt               DateTime?                 @map("deleted_at") @db.Timestamp()
+
+  @@map("user")
+}
+
+
+model UserRole {
+  id                      Int                       @id @default(autoincrement())
+  userId                  String                    @map("user_id")
+  user                    User                      @relation(fields: [userId], references: [id])
+  roleId                  Int                       @map("role_id")
+  role                    Role                      @relation(fields: [roleId], references: [id])
+  createdAt               DateTime                  @default(dbgenerated("now()")) @map("created_at") @db.Timestamp()
+  updatedAt               DateTime?                 @map("updated_at") @db.Timestamp()
+  deletedAt               DateTime?                 @map("deleted_at") @db.Timestamp()
+
+  @@map("user_role")
+}
+
+model Category {
+  id                      String                    @id @default(uuid())
+  name                    String                    @unique
+  description             String?                   
+  products                Product[]
+  createdAt               DateTime                  @default(dbgenerated("now()")) @map("created_at") @db.Timestamp()
+  updatedAt               DateTime?                 @map("updated_at") @db.Timestamp()
+  deletedAt               DateTime?                 @map("deleted_at") @db.Timestamp()
+
+  @@map("category")
+}
+
+model Product {
+  id                      String                    @id @default(uuid())
+  name                    String                    
+  description             String?                   
+  amount                  Int
+  price                   Int
+  categoryId              String                    @map("category_id")
+  category                Category                  @relation(fields: [categoryId],references: [id])
+  cartProduct             CartProduct[]
+  createdAt               DateTime                  @default(dbgenerated("now()")) @map("created_at") @db.Timestamp()
+  updatedAt               DateTime?                 @map("updated_at") @db.Timestamp()
+  deletedAt               DateTime?                 @map("deleted_at") @db.Timestamp()
+
+  @@map("product")
+}
+
+model Cart {
+  id                      String                    @id @default(uuid())
+  userId                  String?                   @unique
+  createdBy               User?                     @relation(fields: [userId],references: [id])
+  cartProducts            CartProduct[]
+  createdAt               DateTime                  @default(dbgenerated("now()")) @map("created_at") @db.Timestamp()
+  updatedAt               DateTime?                 @map("updated_at") @db.Timestamp()
+  deletedAt               DateTime?                 @map("deleted_at") @db.Timestamp()
+
+  @@map("cart")
+}
+
+model CartProduct {
+  id                      String                    @id @default(uuid())
+  cartId                  String                    @map("cart_id")
+  cart                    Cart                      @relation(fields: [cartId],references: [id])
+  productId               String                    @map("product_id")
+  product                 Product                   @relation(fields: [productId],references: [id])
+  createdAt               DateTime                  @default(dbgenerated("now()")) @map("created_at") @db.Timestamp()
+  updatedAt               DateTime?                 @map("updated_at") @db.Timestamp()
+  deletedAt               DateTime?                 @map("deleted_at") @db.Timestamp()
+
+  @@map("cart_product")
+}
