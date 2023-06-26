@@ -1,11 +1,13 @@
-import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { AuthDTO } from './dto/index';
+import { AuthDTO, ResetPasswordDTO } from './dto/index';
 import * as argon from 'argon2';
 import { UsersService } from '../users/users.service';
 import { CreateUserDTO } from '../users/dto';
+import { MailService } from '../mail/mail.service';
+import * as crypto from 'crypto'
 
 @Injectable()
 export class AuthService {
@@ -13,7 +15,8 @@ export class AuthService {
         private prismaService: PrismaService,
         private userService : UsersService,
         private jwtService : JwtService,
-        private configService: ConfigService
+        private configService: ConfigService,
+        private mailService : MailService,
     ){}
 
     async signup(createUserDTO: CreateUserDTO){
@@ -54,4 +57,33 @@ export class AuthService {
         }
     }
 
+    async generateResetPasswordToken(email: string) {
+        const user = await this.userService.findByEmail(email);
+        if(!user) {
+            throw new NotFoundException(`User not found with EMAIL : ${email}`);
+        }
+        if(user.passwordResetExpiration < new Date()) {
+            const forgetPasswordToken = crypto.randomBytes(16).toString('hex');
+            const forgetPasswordExpiration = new Date(Date.now() + 10 * 60000);
+            await this.userService.updateResetPassword(user.id,forgetPasswordToken,forgetPasswordExpiration);
+            return forgetPasswordToken;
+        }else {
+            return user.passwordResetToken;
+        }
+    }
+
+    async sendResetPasswordMail(email: string,forgetPasswordToken: string) {
+        return await this.mailService.sendResetPasswordMail(email,forgetPasswordToken);
+    }
+
+    async resetPassword(resetPasswordDTO: ResetPasswordDTO) {
+        const user = await this.userService.findByResetPasswordToken(resetPasswordDTO.tokenResetPassword);
+        if(!user) {
+            throw new NotFoundException(`Invalid Token !`);
+        }
+        if(user.passwordResetExpiration < new Date()) {
+            throw new BadRequestException('Reset password Token has already expired.');
+        }
+        return await this.userService.updatePassword(user.id,resetPasswordDTO.newPassword);
+    }
 }

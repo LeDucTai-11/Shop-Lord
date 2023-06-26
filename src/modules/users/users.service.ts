@@ -91,6 +91,74 @@ export class UsersService {
         return user;
     }
 
+    async findByEmail(email : string) {
+        const user = await this.prismaService.user.findUnique({
+            where: {
+                email: email,
+            },
+            select: {
+                id: true,
+                email: true,
+                username: true,
+                firstName: true,
+                lastName: true,
+                gender: true,
+                passwordResetToken: true,
+                passwordResetExpiration: true,
+                userRoles: {
+                    select: {
+                        roleId: true,
+                        role: {
+                            select: {
+                                id: true,
+                                name: true,
+                            }
+                        }
+                    },
+                    where: {
+                        deletedAt: null
+                    }
+                },
+                createdAt: true
+            }
+        });
+        return user;
+    }
+
+    async findByResetPasswordToken(resetPasswordToken : string) {
+        const user = await this.prismaService.user.findFirst({
+            where: {
+                passwordResetToken: resetPasswordToken,
+            },
+            select: {
+                id: true,
+                email: true,
+                username: true,
+                firstName: true,
+                lastName: true,
+                gender: true,
+                passwordResetToken: true,
+                passwordResetExpiration: true,
+                userRoles: {
+                    select: {
+                        roleId: true,
+                        role: {
+                            select: {
+                                id: true,
+                                name: true,
+                            }
+                        }
+                    },
+                    where: {
+                        deletedAt: null
+                    }
+                },
+                createdAt: true
+            }
+        });
+        return user;
+    }
+
     async createUser(createUserDTO: CreateUserDTO) {
         const hashedPassword = await argon.hash(createUserDTO.password);
         return this.prismaService.user.create({
@@ -112,6 +180,7 @@ export class UsersService {
                 email: true,
                 username: true,
                 firstName: true,
+                lastName: true,
                 gender: true,
                 userRoles: {
                     select: {
@@ -132,6 +201,49 @@ export class UsersService {
         });
     }
 
+    async updateResetPassword(userID: string, resetPasswordToken: string,resetPasswordExpiration: Date) {
+        try {
+            return await this.prismaService.user.update({
+                where: {
+                    id: userID,
+                },
+                data: {
+                    passwordResetToken: resetPasswordToken,
+                    passwordResetExpiration: resetPasswordExpiration,
+                    updatedAt: new Date(),
+                },
+                select: {
+                    id: true,
+                    email: true,
+                    username: true,
+                    firstName: true,
+                    lastName: true,
+                    gender: true,
+                    userRoles: {
+                        select: {
+                            roleId: true,
+                            role: {
+                                select: {
+                                    id: true,
+                                    name: true,
+                                }
+                            }
+                        },
+                        where: {
+                            deletedAt: null,
+                        }
+                    },
+                    createdAt: true,
+                    updatedAt: true
+                }
+            })
+        } catch (e) {
+            throw new HttpException(e.message, 500, {
+                cause: new Error('Some Error'),
+            });
+        }
+    }
+
     async updatePassword(userID: string, password: string) {
         const hashedPassword = await argon.hash(password);
         try {
@@ -148,6 +260,7 @@ export class UsersService {
                     email: true,
                     username: true,
                     firstName: true,
+                    lastName: true,
                     gender: true,
                     userRoles: {
                         select: {
