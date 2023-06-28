@@ -1,6 +1,6 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import { BadRequestException, HttpException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CreateUserDTO } from './dto';
+import { CreateUserDTO, UpdateUserDTO } from './dto';
 import * as argon from 'argon2';
 import { Role } from 'src/core/enum/roles.enum';
 
@@ -91,7 +91,7 @@ export class UsersService {
         return user;
     }
 
-    async findByEmail(email : string) {
+    async findByEmail(email: string) {
         const user = await this.prismaService.user.findUnique({
             where: {
                 email: email,
@@ -125,7 +125,7 @@ export class UsersService {
         return user;
     }
 
-    async findByResetPasswordToken(resetPasswordToken : string) {
+    async findByResetPasswordToken(resetPasswordToken: string) {
         const user = await this.prismaService.user.findFirst({
             where: {
                 passwordResetToken: resetPasswordToken,
@@ -201,7 +201,7 @@ export class UsersService {
         });
     }
 
-    async updateResetPassword(userID: string, resetPasswordToken: string,resetPasswordExpiration: Date) {
+    async updateResetPassword(userID: string, resetPasswordToken: string, resetPasswordExpiration: Date) {
         try {
             return await this.prismaService.user.update({
                 where: {
@@ -285,5 +285,47 @@ export class UsersService {
                 cause: new Error('Some Error'),
             });
         }
+    }
+
+    async updateProfile(req: any, updateUserDTO: UpdateUserDTO) {
+        if (updateUserDTO.email) {
+            const user = await this.findByEmail(updateUserDTO.email);
+            if (user && user.id !== req.user.id) {
+                throw new BadRequestException('The email has already exist !');
+            }
+        }
+        return await this.prismaService.user.update({
+            where: {
+                id: req.user.id,
+            },
+            data: {
+                ...updateUserDTO,
+                updatedAt: new Date()
+            },
+            select: {
+                id: true,
+                email: true,
+                username: true,
+                firstName: true,
+                lastName: true,
+                gender: true,
+                userRoles: {
+                    select: {
+                        roleId: true,
+                        role: {
+                            select: {
+                                id: true,
+                                name: true,
+                            }
+                        }
+                    },
+                    where: {
+                        deletedAt: null,
+                    }
+                },
+                createdAt: true,
+                updatedAt: true
+            }
+        })
     }
 }

@@ -1,9 +1,10 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Patch, Post, Req, UseGuards } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from 'src/core/guards/jwt/jwt.guard';
-import { ApiBearerAuth, ApiProperty, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AuthService } from '../auth/auth.service';
 import { ResetPasswordDTO } from '../auth/dto';
+import { UpdateUserDTO } from './dto';
 
 @ApiTags('users')
 @Controller('users')
@@ -18,6 +19,12 @@ export class UsersController {
     @Get("/profile")
     getProfile(@Req() req: any) {
         return this.userService.findByID(req.user.id);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Patch("/profile")
+    updateProfile(@Req() req: any,@Body() updateUserDTO: UpdateUserDTO) {
+        return this.userService.updateProfile(req,updateUserDTO);
     }
 
     @UseGuards(JwtAuthGuard)

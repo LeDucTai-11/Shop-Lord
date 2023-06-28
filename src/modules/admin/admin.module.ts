@@ -3,12 +3,16 @@ import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
 import { UsersService } from '../users/users.service';
 import { CheckUserIDMiddleware } from '../users/middlewares';
+import { ProductsService } from '../products/products.service';
+import { CategoriesService } from '../categories/categories.service';
 
 @Module({
   controllers: [AdminController],
   providers: [
     AdminService,
-    UsersService
+    UsersService,
+    ProductsService,
+    CategoriesService
   ]
 })
 export class AdminModule implements NestModule {
