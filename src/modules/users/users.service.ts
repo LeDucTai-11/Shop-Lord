@@ -173,6 +173,10 @@ export class UsersService {
                     create: {
                         roleId: Role.User
                     }
+                },
+                userCart: {
+                    create: {
+                    }
                 }
             },
             select: {
